@@ -41,6 +41,7 @@ export * from "./src/transform";
 export * from "./src/typedef";
 export * from "./src/util";
 export * from "./src/xlsx";
+export * from "./src/zod";
 
 registerType("auto", intConvertor);
 registerType("bool", boolConvertor);

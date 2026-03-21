@@ -62,23 +62,34 @@ export const genTsType = (workbook: Workbook, resolver: TypeResolver) => {
             const optional = typename.endsWith("?") ? "?" : "";
             const array = typename.match(/\[.*\]/)?.[0].replace(/\d+/g, "") ?? "";
             typename = typename.match(/^[\w@]+/)?.[0] ?? "";
+            let tsType: string;
             if (typename === "int" || typename === "float" || typename === "auto") {
-                typeBuffer.writeLine(`readonly ${field.name}${optional}: number${array};`);
+                tsType = `number`;
             } else if (typename === "string") {
-                typeBuffer.writeLine(`readonly ${field.name}${optional}: string${array};`);
+                tsType = `string`;
             } else if (typename === "bool") {
-                typeBuffer.writeLine(`readonly ${field.name}${optional}: boolean${array};`);
+                tsType = `boolean`;
             } else if (
                 typename.startsWith("json") ||
                 typename.startsWith("table") ||
                 typename.startsWith("unknown") ||
                 typename.startsWith("@")
             ) {
-                typeBuffer.writeLine(`readonly ${field.name}${optional}: unknown${array};`);
+                tsType = `unknown`;
             } else {
-                const ret = typeImporter.resolve(typename);
-                typeBuffer.writeLine(`readonly ${field.name}${optional}: ${ret.type}${array};`);
+                tsType = typeImporter.resolve(typename).type;
             }
+            typeBuffer.padding();
+            typeBuffer.writeString(`readonly ${field.name}${optional}: `);
+            if (array) {
+                const deepCount = array.length / 2;
+                tsType = `readonly ${tsType}[]`;
+                for (let i = 1; i < deepCount; i++) {
+                    tsType = `readonly (${tsType})[]`;
+                }
+            }
+            typeBuffer.writeString(`${tsType};`);
+            typeBuffer.linefeed();
         }
         typeBuffer.unindent();
         typeBuffer.writeLine(`}`);

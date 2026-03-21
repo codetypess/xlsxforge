@@ -1,4 +1,3 @@
-import { execSync } from "child_process";
 import crypto from "crypto";
 import fs from "fs";
 import { basename, dirname, join, normalize, resolve } from "path";
@@ -13,7 +12,7 @@ xlsx.registerProcessor(
     "validate-json",
     async (workbook) => {
         if (!initedSchema) {
-            genSchema();
+            await genSchema();
             initedSchema = true;
         }
 
@@ -91,7 +90,7 @@ const write = (path: string, content: string) => {
     fs.writeFileSync(path, content);
 };
 
-const genSchema = () => {
+const genSchema = async () => {
     const arr: { name: string; input: string; output: string }[] = [];
 
     const clientDir = "test/output/client";
@@ -122,22 +121,6 @@ const genSchema = () => {
             });
         });
 
-    xlsx.writeFile(
-        "./ts-to-zod.config.cjs",
-        xlsx.stringifyTs(arr, {
-            indent: 4,
-            asconst: false,
-            marshal: xlsx.outdent(`
-                /**
-                 * ts-to-zod configuration.
-                 *
-                 * @type {import("ts-to-zod").TsToZodConfig}
-                 */
-                // eslint-disable-next-line no-undef
-                module.exports = `),
-        })
-    );
-
     const isModified = (file: string) => {
         return !fs.existsSync(file) || md5Json[file] !== calcFileMd5(file);
     };
@@ -154,13 +137,10 @@ const genSchema = () => {
             continue;
         }
         fs.mkdirSync(`${dirname(v.output)}`, { recursive: true });
-        const ret = execSync(`npx ts-to-zod --config ${v.name}  --skipValidation`);
-        // 检查schemaPath的ts文件里没有`z.any z.unknown`字眼
+        await xlsx.tsToZod(v.input, v.output);
         const schemaContent = fs.readFileSync(v.output, "utf-8");
-        const anyRegex = /z.any/g;
-        const unknownRegex = /z.unknown/g;
-        const anyCount = (schemaContent.match(anyRegex) || []).length; // 检查schemaPath的ts文件里没有`z.any`字眼
-        const unknownCount = (schemaContent.match(unknownRegex) || []).length; // 检查schemaPath的ts文件里没有`z.unknown`字眼
+        const anyCount = (schemaContent.match(/z\.any/g) || []).length;
+        const unknownCount = (schemaContent.match(/z\.unknown/g) || []).length;
         if (anyCount > 0 || unknownCount > 0) {
             throw new Error(`路径：${v.output} 拥有 'z.any' 或 'z.unknown' 类型, 请先解决这个问题`);
         }
@@ -173,7 +153,7 @@ const genSchema = () => {
         md5Json[v.input] = calcFileMd5(v.input);
         md5Json[v.output] = calcFileMd5(v.output);
         xlsx.writeJson(md5Path, md5Json);
-        console.log(`ts-to-zod ${v.input} ${v.output} ${ret.toString().trim()}`);
+        console.log(`ts to zod ${v.input} -> ${v.output}`);
     }
 };
 

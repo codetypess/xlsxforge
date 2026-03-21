@@ -25,11 +25,11 @@ export interface GeneratedItemFollowRow {
     /**
      *  (location: D1) (checker: x)
      */
-    readonly arr1?: number[];
+    readonly arr1?: readonly number[];
     /**
      *  (location: E1) (checker: $.length == arr1.length)
      */
-    readonly arr2?: number[];
+    readonly arr2?: readonly number[];
 }
 
 export interface GeneratedItemItemRow {
