@@ -1,5 +1,6 @@
+import { type TArray, type TCell, type TObject, type TValue, Type } from "./core/schema.js";
+import { checkType, isNotNull } from "./core/value.js";
 import { escape, isNumericKey, keys } from "./util.js";
-import { TArray, TCell, TObject, TValue, Type, checkType, isNotNull } from "./xlsx.js";
 
 export class StringBuffer {
     readonly data: string[] = [];

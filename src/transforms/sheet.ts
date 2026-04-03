@@ -1,21 +1,12 @@
 import { RowIndexer } from "../indexer.js";
+import { convertValue } from "../core/conversion.js";
+import { assert } from "../core/errors.js";
+import { convertors } from "../core/registry.js";
+import { type Sheet, type TArray, type TObject, type TRow, type TValue, Type } from "../core/schema.js";
+import { checkType, isNotNull, toString } from "../core/value.js";
+import { Workbook } from "../core/workbook.js";
 import { TypedefField, TypedefObject, TypedefUnion, TypedefWorkbook } from "../typedef.js";
 import { values } from "../util.js";
-import {
-    assert,
-    checkType,
-    convertors,
-    convertValue,
-    isNotNull,
-    Sheet,
-    TArray,
-    TObject,
-    toString,
-    TRow,
-    TValue,
-    Type,
-    Workbook,
-} from "../xlsx.js";
 
 export const defineSheet = (workbook: Workbook, sheet: Sheet) => {
     checkType(sheet.data, Type.Sheet);

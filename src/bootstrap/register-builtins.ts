@@ -31,7 +31,8 @@ import {
     TypedefWriteProcessor,
 } from "../builtins/processors.js";
 import { tableConvertor } from "../table.js";
-import { BuiltinChecker, registerChecker, registerProcessor, registerType } from "../xlsx.js";
+import { BuiltinChecker } from "../core/contracts.js";
+import { registerChecker, registerProcessor, registerType } from "../core/registry.js";
 
 let registered = false;
 

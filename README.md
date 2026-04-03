@@ -354,7 +354,7 @@ typedef Sheet 至少需要这些字段：
 | `genLuaTypedef()`      | 为 typedef workbook 生成 Lua 类型        |
 | `genXlsxType()`        | 为整个 context 生成汇总 TypeScript 类型  |
 | `genWorkbookIndexer()` | 生成 workbook 查询器                     |
-| `tsToZod()`            | 将 TypeScript 类型文件转成 Zod schema    |
+| `tsToZod()`            | 将 TypeScript 类型文件转成 Zod schema                    |
 
 ## 自定义扩展
 
@@ -405,17 +405,17 @@ xlsx.registerProcessor(
 ## 项目结构
 
 - [index.ts](index.ts)
-  公共入口，注册内置类型、checker、processor，并导出全部 API。
+  默认公共入口，注册内置类型、checker、processor，并导出运行时 API 与工具能力。
 - [src/xlsx.ts](src/xlsx.ts)
-  核心解析流程、上下文管理、writer 调度、checker 执行。
-- [src/processor.ts](src/processor.ts)
-  内置 processor 与 stringify rule。
-- [src/checker.ts](src/checker.ts)
-  内置 checker 与索引检查实现。
+  运行时总入口，负责解析流程调度与公共 re-export。
+- [src/core/](src/core)
+  workbook/context、registry、parser、pipeline 等核心基础设施。
+- [src/builtins/](src/builtins)
+  内置 checker、convertor、processor。
+- [src/transforms/sheet.ts](src/transforms/sheet.ts)
+  sheet 级数据重组与 typedef 转换。
 - [src/typedef.ts](src/typedef.ts)
   typedef 注册与 TS / Lua 类型生成。
-- [src/zod.ts](src/zod.ts)
-  `tsToZod()` 实现。
 - [test/](test)
   端到端示例、回归测试和生成结果样例。
 

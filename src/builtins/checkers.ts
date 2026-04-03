@@ -1,6 +1,10 @@
 import { ColumnIndexer, RowFilter } from "../indexer.js";
+import { CheckerParser } from "../core/contracts.js";
+import { convertValue } from "../core/conversion.js";
+import { error } from "../core/errors.js";
+import { type TCell, type TObject, type TValue } from "../core/schema.js";
+import { Context } from "../core/workbook.js";
 import { keys } from "../util.js";
-import { CheckerParser, Context, convertValue, error, TCell, TObject, TValue } from "../xlsx.js";
 
 export const SizeCheckerParser: CheckerParser = (ctx, arg) => {
     const length = Number(arg);

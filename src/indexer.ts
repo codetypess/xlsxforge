@@ -1,8 +1,10 @@
 import { basename } from "path";
+import { type Context, Workbook } from "./core/workbook.js";
+import { type TCell, type TRow, Type } from "./core/schema.js";
+import { checkType, isNotNull } from "./core/value.js";
 import { StringBuffer } from "./stringify.js";
 import { TypeImporter, TypeResolver } from "./typedef.js";
 import { format, keys, toPascalCase } from "./util.js";
-import { checkType, Context, isNotNull, TCell, TRow, Type, Workbook } from "./xlsx.js";
 
 /** string '2' and number 2 are considered the same */
 const isSame = (a: unknown, b: unknown) => {
