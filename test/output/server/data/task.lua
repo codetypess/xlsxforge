@@ -693,6 +693,11 @@ return {
         },
       },
       sort = 1,
+      task_args = {
+        count = 1,
+        id = 5,
+        kind = "kill_monster",
+      },
       type = 4,
     },
     [4002] = {
@@ -713,6 +718,12 @@ return {
         },
       },
       sort = 2,
+      task_args = {
+        count = 1,
+        duration = 2,
+        id = 71001,
+        kind = "collect_coin",
+      },
       type = 4,
     },
     [4003] = {

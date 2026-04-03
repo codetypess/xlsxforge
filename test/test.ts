@@ -7,6 +7,7 @@ import { defines, types } from "./processor/post_stringify.processor.js";
 import "./processor/validate.processor.js";
 import "./processor/workbook-typedef.processor.js";
 import { makeTypename } from "./processor/workbook-typedef.processor.js";
+import { runTypedefRegressionTests } from "./typedef.regression.js";
 import "./rule/task.rule.js";
 
 const t = Date.now();
@@ -50,7 +51,7 @@ xlsx.registerWriter("client", (workbook, processor, data) => {
             workbook.name,
             String((data as Record<string, unknown>)["sheet"])
         );
-        const content = xlsx.genTsTypedef(workbook, (typename) => {
+        const content = xlsx.genTsTypedef(data as unknown as xlsx.TypedefWorkbook, (typename) => {
             return {
                 type: makeTypename(typename),
                 path: "./index.js",
@@ -92,7 +93,7 @@ xlsx.registerWriter("server", (workbook, processor, data) => {
             `)
         );
     } else if (processor === "typedef") {
-        const content = xlsx.genLuaTypedef(workbook, (typename) => {
+        const content = xlsx.genLuaTypedef(data as unknown as xlsx.TypedefWorkbook, (typename) => {
             return { type: makeTypename(typename) };
         });
         if (content) {
@@ -111,5 +112,6 @@ xlsx.registerWriter("server", (workbook, processor, data) => {
 });
 
 await xlsx.parse(["test/res/item.xlsx", "test/res/task.xlsx", "test/res/typedef.xlsx"]);
+await runTypedefRegressionTests();
 
 console.log(Date.now() - t);

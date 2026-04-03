@@ -58,4 +58,5 @@
 ---@field condition string 条件
 ---@field args table 参数
 ---@field reward Items 奖励
+---@field task_args? TaskArgs 参数
 

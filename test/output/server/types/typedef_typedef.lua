@@ -6,6 +6,13 @@
 ---@field kind "kill_monster" 参数类型
 ---@field id integer 怪物ID
 ---@field count integer 怪物数量
+---@field team? MonsterTeam 队伍
+
+---file: test/res/typedef.xlsx
+---怪物队伍
+---@class MonsterTeam
+---@field leader integer 队长
+---@field soldiers? integer[] 成员
 
 ---file: test/res/typedef.xlsx
 ---捡金币

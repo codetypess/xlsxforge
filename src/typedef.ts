@@ -46,9 +46,16 @@ export type TypedefWorkbook = {
     readonly types: readonly TypedefEntry[];
 };
 
+type TypedefOwner = {
+    readonly key: string;
+    readonly path: string;
+    readonly sheet: string;
+};
+
 const typedefWorkbooks = new Map<string, TypedefWorkbook>();
+const typedefWorkbookKeysByPath = new Map<string, Set<string>>();
 const typedefEntries = new Map<string, TypedefEntry>();
-const typedefOwners = new Map<string, string>();
+const typedefOwners = new Map<string, TypedefOwner>();
 
 const basicTypes = ["string", "number", "boolean", "unknown", "object"];
 
@@ -79,21 +86,51 @@ const stringifyLiteral = (value: TypedefLiteral) => {
     return typeof value === "number" ? String(value) : JSON.stringify(value);
 };
 
+const makeTypedefWorkbookKey = (path: string, sheet: string) => {
+    return `${path}#${sheet}`;
+};
+
+const formatTypedefOwner = (owner: TypedefOwner) => {
+    return `${owner.path}#${owner.sheet}`;
+};
+
 export const registerTypedefWorkbook = (typedefWorkbook: TypedefWorkbook) => {
-    const previous = typedefWorkbooks.get(typedefWorkbook.path);
+    const key = makeTypedefWorkbookKey(typedefWorkbook.path, typedefWorkbook.sheet);
+    const previous = typedefWorkbooks.get(key);
+    const nextOwners = new Map<string, TypedefOwner>();
+
+    for (const type of typedefWorkbook.types) {
+        const previousOwner = typedefOwners.get(type.name);
+        if (previousOwner && previousOwner.key !== key) {
+            throw new Error(
+                `Typedef '${type.name}' is already defined at ${formatTypedefOwner(previousOwner)} ` +
+                    `and duplicated at ${typedefWorkbook.path}#${typedefWorkbook.sheet}`
+            );
+        }
+        nextOwners.set(type.name, {
+            key,
+            path: typedefWorkbook.path,
+            sheet: typedefWorkbook.sheet,
+        });
+    }
+
     if (previous) {
         for (const type of previous.types) {
-            if (typedefOwners.get(type.name) === typedefWorkbook.path) {
+            if (typedefOwners.get(type.name)?.key === key) {
                 typedefEntries.delete(type.name);
                 typedefOwners.delete(type.name);
             }
         }
     }
 
-    typedefWorkbooks.set(typedefWorkbook.path, typedefWorkbook);
+    typedefWorkbooks.set(key, typedefWorkbook);
+    typedefWorkbookKeysByPath.set(
+        typedefWorkbook.path,
+        (typedefWorkbookKeysByPath.get(typedefWorkbook.path) ?? new Set()).add(key)
+    );
     for (const type of typedefWorkbook.types) {
         typedefEntries.set(type.name, type);
-        typedefOwners.set(type.name, typedefWorkbook.path);
+        typedefOwners.set(type.name, nextOwners.get(type.name)!);
     }
 };
 
@@ -116,17 +153,6 @@ const stringifyNestedValue = (value: unknown) => {
 };
 
 export const registerTypedefConvertors = (typedefWorkbook: TypedefWorkbook) => {
-    const objectTypes = new Map<string, TypedefObject>();
-    const unionTypes = new Map<string, TypedefUnion>();
-
-    for (const type of typedefWorkbook.types) {
-        if (type.kind === "object") {
-            objectTypes.set(type.name, type);
-        } else {
-            unionTypes.set(type.name, type);
-        }
-    }
-
     const convertObject = (type: TypedefObject, raw: unknown) => {
         assert(
             !!raw && typeof raw === "object" && !Array.isArray(raw),
@@ -174,9 +200,9 @@ export const registerTypedefConvertors = (typedefWorkbook: TypedefWorkbook) => {
     const resolveUnionObject = (union: TypedefUnion) => {
         const members = new Map<string, TypedefObject>();
         for (const member of union.members) {
-            const objectType = objectTypes.get(member);
+            const objectType = getTypedef(member);
             assert(
-                !!objectType,
+                !!objectType && objectType.kind === "object",
                 `Typedef union '${union.name}' member '${member}' must be an object type`
             );
             const discriminatorField = objectType.fields.find(
@@ -195,29 +221,40 @@ export const registerTypedefConvertors = (typedefWorkbook: TypedefWorkbook) => {
     for (const type of typedefWorkbook.types) {
         registerType(type.name, (value) => {
             const raw = parseTypedefJson(value);
-            if (type.kind === "object") {
-                return convertObject(type, raw);
+            const current = getTypedef(type.name);
+            assert(!!current, `Typedef '${type.name}' is not registered`);
+            if (current.kind === "object") {
+                return convertObject(current, raw);
             }
             assert(
                 !!raw && typeof raw === "object" && !Array.isArray(raw),
-                `Typedef '${type.name}' expects an object`
+                `Typedef '${current.name}' expects an object`
             );
             const source = raw as Record<string, unknown>;
-            const member = resolveUnionObject(type).get(
-                makeLiteralKey(source[type.discriminator] as TypedefLiteral)
+            const member = resolveUnionObject(current).get(
+                makeLiteralKey(source[current.discriminator] as TypedefLiteral)
             );
             assert(
                 !!member,
-                `Typedef union '${type.name}' cannot resolve discriminator '${type.discriminator}'`
+                `Typedef union '${current.name}' cannot resolve discriminator ` +
+                    `'${current.discriminator}'`
             );
             return convertObject(member, source);
         });
     }
 };
 
-export const getTypedefWorkbook = (pathOrWorkbook: string | Workbook) => {
+export const getTypedefWorkbook = (pathOrWorkbook: string | Workbook, sheet?: string) => {
     const path = typeof pathOrWorkbook === "string" ? pathOrWorkbook : pathOrWorkbook.path;
-    return typedefWorkbooks.get(path) ?? null;
+    if (sheet) {
+        return typedefWorkbooks.get(makeTypedefWorkbookKey(path, sheet)) ?? null;
+    }
+    const keys = Array.from(typedefWorkbookKeysByPath.get(path) ?? []);
+    if (keys.length === 0) {
+        return null;
+    }
+    assert(keys.length === 1, `Multiple typedef sheets found in '${path}', specify the sheet name`);
+    return typedefWorkbooks.get(keys[0]) ?? null;
 };
 
 export const getTypedef = (typename: string) => {
@@ -225,7 +262,8 @@ export const getTypedef = (typename: string) => {
 };
 
 export const hasTypedefWorkbook = (pathOrWorkbook: string | Workbook) => {
-    return getTypedefWorkbook(pathOrWorkbook) !== null;
+    const path = typeof pathOrWorkbook === "string" ? pathOrWorkbook : pathOrWorkbook.path;
+    return (typedefWorkbookKeysByPath.get(path)?.size ?? 0) > 0;
 };
 
 export type TypeResolver = (typename: string) => { type: string; path?: string };
@@ -400,6 +438,17 @@ export const genLuaType = (workbook: Workbook, resolver: TypeResolver) => {
 
 const defaultTypeResolver: TypeResolver = (typename) => ({ type: typename });
 
+const isTypedefWorkbook = (value: Workbook | TypedefWorkbook): value is TypedefWorkbook => {
+    return "types" in value && "sheet" in value;
+};
+
+const resolveTypedefWorkbook = (value: Workbook | TypedefWorkbook) => {
+    if (isTypedefWorkbook(value)) {
+        return value;
+    }
+    return getTypedefWorkbook(value);
+};
+
 const resolveTsTypedefType = (
     typename: string,
     localTypes: ReadonlySet<string>,
@@ -478,10 +527,10 @@ const resolveLuaTypedefType = (
 };
 
 export const genTsTypedef = (
-    workbook: Workbook,
+    workbook: Workbook | TypedefWorkbook,
     resolver: TypeResolver = defaultTypeResolver
 ) => {
-    const typedefWorkbook = getTypedefWorkbook(workbook);
+    const typedefWorkbook = resolveTypedefWorkbook(workbook);
     if (!typedefWorkbook) {
         return "";
     }
@@ -537,10 +586,10 @@ export const genTsTypedef = (
 };
 
 export const genLuaTypedef = (
-    workbook: Workbook,
+    workbook: Workbook | TypedefWorkbook,
     resolver: TypeResolver = defaultTypeResolver
 ) => {
-    const typedefWorkbook = getTypedefWorkbook(workbook);
+    const typedefWorkbook = resolveTypedefWorkbook(workbook);
     if (!typedefWorkbook) {
         return "";
     }

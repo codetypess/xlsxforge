@@ -9,6 +9,16 @@ export interface TaskArgKillMonster {
     id: number;
     /** 怪物数量 */
     count: number;
+    /** 队伍 */
+    team?: MonsterTeam;
+}
+
+/** 怪物队伍 */
+export interface MonsterTeam {
+    /** 队长 */
+    leader: number;
+    /** 成员 */
+    soldiers?: number[];
 }
 
 /** 捡金币 */

@@ -5,6 +5,9 @@ return {
         count = 1,
         id = 5,
         kind = "kill_monster",
+        team = {
+          leader = 1,
+        },
       },
       condition = "mainline_event",
       id = 1001,

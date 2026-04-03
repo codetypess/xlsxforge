@@ -544,6 +544,10 @@ export interface TaskWeeklyRow {
      * 任务icon (location: I1) (type: string) (checker: x) (writer: client)
      */
     icon: { v: string } & TCell;
+    /**
+     * 参数 (location: J1) (type: TaskArgs?) (checker: x) (writer: client|server)
+     */
+    task_args: { v?: TaskArgs } & TCell;
 }
 
 // file: test/res/typedef.xlsx

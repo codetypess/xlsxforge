@@ -3,6 +3,7 @@
 
 import {
     Items,
+    TaskArgs,
     TaskType,
 } from "../define/index.js";
 
@@ -219,6 +220,10 @@ export interface GeneratedTaskWeeklyRow {
      * 任务icon (location: I1) (checker: x)
      */
     readonly icon: string;
+    /**
+     * 参数 (location: J1) (checker: x)
+     */
+    readonly task_args?: TaskArgs;
 }
 
 export interface GeneratedTaskTable {

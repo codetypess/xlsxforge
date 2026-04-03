@@ -139,8 +139,8 @@ export const TypedefProcessor: Processor = async (workbook: Workbook, sheet: She
     sheet.ignore = true;
 };
 
-export const TypedefWriteProcessor: Processor = async (workbook: Workbook) => {
-    const typedefWorkbook = getTypedefWorkbook(workbook);
+export const TypedefWriteProcessor: Processor = async (workbook: Workbook, sheet: Sheet) => {
+    const typedefWorkbook = getTypedefWorkbook(workbook, sheet.name);
     if (!typedefWorkbook) {
         return;
     }
