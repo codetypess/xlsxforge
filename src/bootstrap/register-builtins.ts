@@ -2,6 +2,7 @@ import {
     ExprCheckerParser,
     FollowCheckerParser,
     IndexCheckerParser,
+    OneOfCheckerParser,
     RangeCheckerParser,
     ReferCheckerParser,
     SheetCheckerParser,
@@ -53,6 +54,7 @@ export const registerBuiltins = () => {
     registerChecker(BuiltinChecker.Expr, ExprCheckerParser);
     registerChecker(BuiltinChecker.Follow, FollowCheckerParser);
     registerChecker(BuiltinChecker.Index, IndexCheckerParser);
+    registerChecker(BuiltinChecker.OneOf, OneOfCheckerParser);
     registerChecker(BuiltinChecker.Range, RangeCheckerParser);
     registerChecker(BuiltinChecker.Refer, ReferCheckerParser);
     registerChecker(BuiltinChecker.Sheet, SheetCheckerParser);

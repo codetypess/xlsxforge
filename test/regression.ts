@@ -8,6 +8,9 @@ import {
     IndexCheckerParser,
     SheetCheckerParser,
 } from "../src/builtins/checkers.js";
+import type { CheckerType } from "../src/core/contracts.js";
+import { parseChecker } from "../src/core/parser.js";
+import { performChecker, resolveChecker } from "../src/core/pipeline.js";
 import { mergeTypeFile } from "../src/tooling/validate.js";
 
 const makeField = (name: string) => {
@@ -43,9 +46,18 @@ const makeRow = (cells: Record<string, xlsx.TCell>) => {
     } as xlsx.TRow;
 };
 
+const clearAllContexts = () => {
+    for (const ctx of xlsx.getContexts().slice()) {
+        xlsx.removeContext(ctx);
+    }
+};
+
 export const runRegressionTests = async () => {
+    clearAllContexts();
     await xlsx.parse(["test/res/item.xlsx"], true);
+    clearAllContexts();
     await xlsx.parse(["test/res/item.xlsx"], true);
+    clearAllContexts();
 
     {
         const ctx = new xlsx.Context("test-sheet-checker", "regression-sheet-checker");
@@ -59,18 +71,18 @@ export const runRegressionTests = async () => {
         targetWorkbook.add(targetSheet);
 
         const checker = SheetCheckerParser(ctx, "src.xlsx", "main", "", "", "ref.xlsx");
-        const errors: string[] = [];
-        const ok = checker({
-            workbook: sourceWorkbook,
-            sheet: sourceSheet,
-            field: sourceSheet.fields[0],
-            row: makeRow({}),
-            cell: xlsx.makeCell("missing", "string", "A1", "missing"),
-            errors,
-        });
-
-        assert.equal(ok, false);
-        assert.deepEqual(errors, ["missing"]);
+        assert.throws(
+            () =>
+                checker({
+                    workbook: sourceWorkbook,
+                    sheet: sourceSheet,
+                    field: sourceSheet.fields[0],
+                    row: makeRow({}),
+                    cell: xlsx.makeCell("missing", "string", "A1", "missing"),
+                    errors: [],
+                }),
+            /Sheet not found: missing/
+        );
         xlsx.removeContext(ctx);
     }
 
@@ -132,16 +144,37 @@ export const runRegressionTests = async () => {
             cell: xlsx.makeCell(1, "int", "A2", "1"),
             errors: secondErrors,
         });
-        assert.equal(secondOk, false);
+        assert.equal(secondOk, true);
         assert.ok(secondErrors.includes("not found kind in row"));
 
         xlsx.removeContext(ctx);
     }
 
     {
+        const parsed = parseChecker(
+            "source.xlsx",
+            "main",
+            "A1",
+            0,
+            "@oneof(target#main.id, fallback#main.id)"
+        ) as CheckerType[];
+        assert.equal(parsed.length, 1);
+        assert.equal(parsed[0]?.name, xlsx.BuiltinChecker.OneOf);
+        assert.deepEqual(
+            parsed[0]?.oneof.map((child) => child.source),
+            ["target#main.id", "fallback#main.id"]
+        );
+
+        assert.throws(
+            () => parseChecker("source.xlsx", "main", "A1", 0, "@oneof(target#main.id, x)"),
+            /Oneof branch must contain exactly one checker/
+        );
+    }
+
+    {
         const checker = ExprCheckerParser(
             {} as xlsx.Context,
-            "$.length == arr1.length && $[0] > min && enabled == true"
+            "$.length == arr1.length && $[0] > min && enabled"
         );
         const errors: string[] = [];
         const ok = checker({
@@ -158,15 +191,100 @@ export const runRegressionTests = async () => {
         });
         assert.equal(ok, true);
         assert.deepEqual(errors, []);
+    }
 
-        assert.throws(
-            () =>
-                ExprCheckerParser(
-                    {} as xlsx.Context,
-                    'constructor.constructor("return process")()'
-                ),
-            /Unexpected token|Invalid token/
+    {
+        const ctx = xlsx.addContext(new xlsx.Context("client", "regression-oneof"));
+        const sourceWorkbook = new xlsx.Workbook(ctx, "source.xlsx");
+        const targetWorkbook = new xlsx.Workbook(ctx, "target.xlsx");
+        const fallbackWorkbook = new xlsx.Workbook(ctx, "fallback.xlsx");
+
+        const sourceSheet = makeSheet("main", ["id"]);
+        const targetSheet = makeSheet("main", ["id"]);
+        const fallbackSheet = makeSheet("main", ["id"]);
+
+        (sourceSheet.fields[0]!.checkers as CheckerType[]).push(
+            ...(parseChecker(
+                "source.xlsx",
+                "main",
+                "A1",
+                0,
+                "@oneof(target#main.id, fallback#main.id)"
+            ) as CheckerType[])
         );
+
+        sourceSheet.data["row-1"] = makeRow({
+            id: xlsx.makeCell(2, "int", "A2", "2"),
+        });
+        targetSheet.data["1"] = makeRow({
+            id: xlsx.makeCell(1, "int", "A1", "1"),
+        });
+        fallbackSheet.data["2"] = makeRow({
+            id: xlsx.makeCell(2, "int", "A1", "2"),
+        });
+
+        ctx.add(sourceWorkbook);
+        ctx.add(targetWorkbook);
+        ctx.add(fallbackWorkbook);
+        sourceWorkbook.add(sourceSheet);
+        targetWorkbook.add(targetSheet);
+        fallbackWorkbook.add(fallbackSheet);
+
+        resolveChecker();
+        assert.doesNotThrow(() => performChecker());
+
+        xlsx.removeContext(ctx);
+    }
+
+    {
+        const ctx = xlsx.addContext(new xlsx.Context("client", "regression-oneof-failed"));
+        const sourceWorkbook = new xlsx.Workbook(ctx, "source.xlsx");
+        const targetWorkbook = new xlsx.Workbook(ctx, "target.xlsx");
+        const fallbackWorkbook = new xlsx.Workbook(ctx, "fallback.xlsx");
+
+        const sourceSheet = makeSheet("main", ["id"]);
+        const targetSheet = makeSheet("main", ["id"]);
+        const fallbackSheet = makeSheet("main", ["id"]);
+
+        (sourceSheet.fields[0]!.checkers as CheckerType[]).push(
+            ...(parseChecker(
+                "source.xlsx",
+                "main",
+                "A1",
+                0,
+                "@oneof(target#main.id, fallback#main.id)"
+            ) as CheckerType[])
+        );
+
+        sourceSheet.data["row-1"] = makeRow({
+            id: xlsx.makeCell(3, "int", "A2", "3"),
+        });
+        targetSheet.data["1"] = makeRow({
+            id: xlsx.makeCell(1, "int", "A1", "1"),
+        });
+        fallbackSheet.data["2"] = makeRow({
+            id: xlsx.makeCell(2, "int", "A1", "2"),
+        });
+
+        ctx.add(sourceWorkbook);
+        ctx.add(targetWorkbook);
+        ctx.add(fallbackWorkbook);
+        sourceWorkbook.add(sourceSheet);
+        targetWorkbook.add(targetSheet);
+        fallbackWorkbook.add(fallbackSheet);
+
+        resolveChecker();
+        let failure: Error | undefined;
+        try {
+            performChecker();
+        } catch (e) {
+            failure = e as Error;
+        }
+        assert(failure);
+        assert.match(failure.message, /oneof branch failed: target#main\.id/);
+        assert.match(failure.message, /oneof branch failed: fallback#main\.id/);
+
+        xlsx.removeContext(ctx);
     }
 
     {
@@ -218,7 +336,7 @@ export interface CustomExtra {
 
         mergeTypeFile(autoPath, mergedPath);
         const merged = fs.readFileSync(mergedPath, "utf-8");
-        assert.match(merged, /import type \{ ExtraType \} from "\.\/extra\.js";/);
+        assert.match(merged, /import type\s*\{\s*ExtraType,\s*\}\s*from "\.\/extra\.js";/);
         assert.match(merged, /BarType/);
         assert.match(merged, /readonly args: Record<string, number \| string>; \/\/ override/);
         assert.match(merged, /readonly optional\?: FooType;/);

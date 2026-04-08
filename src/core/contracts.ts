@@ -6,6 +6,7 @@ export type CheckerType = {
     readonly force: boolean;
     readonly source: string;
     readonly args: string[];
+    readonly oneof: CheckerType[];
     readonly location: string;
     readonly refers: Record<string, CheckerType[]>;
     exec: Checker;
@@ -29,6 +30,7 @@ export const enum BuiltinChecker {
     Index = "xlsx.checker.index",
     Expr = "xlsx.checker.expr",
     Sheet = "xlsx.checker.sheet",
+    OneOf = "xlsx.checker.oneof",
 }
 
 export type Convertor = (str: string) => TValue;

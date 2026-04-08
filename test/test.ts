@@ -7,6 +7,7 @@ import { defines, types } from "./processor/post_stringify.processor.js";
 import "./processor/validate.processor.js";
 import "./processor/workbook-typedef.processor.js";
 import { makeTypename } from "./processor/workbook-typedef.processor.js";
+import { runRegressionTests } from "./regression.js";
 import { runTypedefRegressionTests } from "./typedef.regression.js";
 import "./rule/task.rule.js";
 
@@ -112,6 +113,7 @@ xlsx.registerWriter("server", (workbook, processor, data) => {
 });
 
 await xlsx.parse(["test/res/item.xlsx", "test/res/task.xlsx", "test/res/typedef.xlsx"]);
+await runRegressionTests();
 await runTypedefRegressionTests();
 
 console.log(Date.now() - t);

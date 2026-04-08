@@ -231,6 +231,8 @@ xlsx.registerStringify("task", (workbook) => {
   表达式检查，`$` 表示当前单元格的值。
 - `@size(10)`
   当前值必须是数组，且长度为 `10`。
+- `@oneof(checker1, checker2, ...)`
+  参数里的每一项都是一个完整 checker，只要其中任意一项通过，整体就通过。
 - `@follow(field)`
   如果目标列有值，则当前列也必须有值；如果目标列为空，当前列也必须为空。
 - `@unique`
@@ -291,6 +293,13 @@ $.star?==hero#hero_star.star;$.stage?==hero#hero_stage.stage_parameter
 $.rewards[*].item_id
 $.config.targets[0]
 $.attrs?[*][0]
+```
+
+`@oneof(...)` 常见示例：
+
+```text
+@oneof(item#item.id, task#task.id)
+@oneof($[*]==item#item.id, $[*]==equip#equip.id)
 ```
 
 ## typedef

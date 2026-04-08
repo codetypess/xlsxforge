@@ -17,6 +17,24 @@ import { Context, Workbook } from "./workbook.js";
 
 const MAX_ERRORS = 50;
 
+const resolveCheckerNode = (ctx: Context, checker: CheckerType) => {
+    const parser = checkerParsers[checker.name];
+    if (!parser) {
+        error(`Checker parser not found at ${checker.location}: '${checker.name}'`);
+    }
+    using _ = doing(`Parsing checker at ${checker.location}: ${checker.source}`);
+    assert(!checker.exec, `Checker already parsed: ${checker.location}`);
+    checker.exec = parser(ctx, ...checker.args);
+    for (const child of checker.oneof) {
+        resolveCheckerNode(ctx, child);
+    }
+    for (const refers of Object.values(checker.refers)) {
+        for (const child of refers) {
+            resolveCheckerNode(ctx, child);
+        }
+    }
+};
+
 export const resolveChecker = () => {
     const writerKeys = Object.keys(writers);
     for (const ctx of getContexts()) {
@@ -27,24 +45,8 @@ export const resolveChecker = () => {
             for (const sheet of workbook.sheets) {
                 using _ = doing(`Resolving checker in '${workbook.path}#${sheet.name}'`);
                 for (const field of sheet.fields) {
-                    const checkers = (field.checkers as CheckerType[]).slice();
-                    (field.checkers as CheckerType[]).forEach((v) => {
-                        if (v.name === BuiltinChecker.Refer) {
-                            checkers.push(...Object.values(v.refers).flat());
-                        }
-                    });
-                    for (const checker of checkers) {
-                        const parser = checkerParsers[checker.name];
-                        if (!parser) {
-                            error(
-                                `Checker parser not found at ${checker.location}: '${checker.name}'`
-                            );
-                        }
-                        using __ = doing(
-                            `Parsing checker at ${checker.location}: ${checker.source}`
-                        );
-                        assert(!checker.exec, `Checker already parsed: ${checker.location}`);
-                        checker.exec = parser(ctx, ...checker.args);
+                    for (const checker of field.checkers as CheckerType[]) {
+                        resolveCheckerNode(ctx, checker);
                     }
                 }
             }
@@ -86,6 +88,40 @@ export const copyWorkbook = () => {
     }
 };
 
+const invokeCheckerNode = (ctx: CheckerContext, checker: CheckerType, forced: boolean = false) => {
+    if (ctx.cell.v === null && !(forced || checker.force)) {
+        return true;
+    }
+    if (checker.name !== BuiltinChecker.OneOf) {
+        return checker.exec(ctx);
+    }
+    if (checker.oneof.length === 0) {
+        ctx.errors.push("oneof requires at least one checker");
+        return false;
+    }
+
+    const errors = ctx.errors;
+    const branchErrors: string[] = [];
+    for (const child of checker.oneof) {
+        ctx.errors = [];
+        if (invokeCheckerNode(ctx, child, forced || checker.force)) {
+            ctx.errors = errors;
+            return true;
+        }
+        if (ctx.errors.length === 0) {
+            branchErrors.push(`oneof branch failed: ${child.source}`);
+        } else {
+            branchErrors.push(`oneof branch failed: ${child.source}`);
+            for (const err of ctx.errors) {
+                branchErrors.push(`  ${err}`);
+            }
+        }
+    }
+    ctx.errors = errors;
+    ctx.errors.push(...branchErrors);
+    return false;
+};
+
 const invokeReferChecker = (
     ctx: CheckerContext,
     cell: TCell,
@@ -94,7 +130,7 @@ const invokeReferChecker = (
 ) => {
     for (const checker of checkers) {
         const errorValues: string[] = [];
-        if ((cell.v !== null || checker.force) && !checker.exec(ctx)) {
+        if (!invokeCheckerNode(ctx, checker)) {
             errorValues.push(`${cell.r}: ${cell.s}`);
             if (ctx.errors.length > 0) {
                 for (const str of ctx.errors) {
@@ -140,7 +176,7 @@ const invokeChecker = (workbook: Workbook, sheet: Sheet, field: Field, errors: s
             checkType(cell, Type.Cell);
             ctx.cell = cell;
             ctx.row = row;
-            if ((cell.v !== null || checker.force) && !checker.exec(ctx)) {
+            if (!invokeCheckerNode(ctx, checker)) {
                 errorValues.push(`${cell.r}: ${cell.s}`);
                 if (ctx.errors.length > 0) {
                     for (const str of ctx.errors) {

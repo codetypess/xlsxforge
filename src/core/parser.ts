@@ -59,7 +59,7 @@ export const parseChecker = (
     location: string,
     index: number,
     str: string
-) => {
+): CheckerType[] => {
     if (str === "x" || (index === 0 && str.startsWith("!!"))) {
         return [];
     }
@@ -79,12 +79,33 @@ export const parseChecker = (
             let checker: CheckerType | undefined;
             if (s.startsWith("@")) {
                 const [, name = "", arg = ""] = s.match(/^@(\w+)(?:\((.*?)\))?$/) ?? [];
+                const args = arg.split(",").map((v) => v.trim());
+                const oneof: CheckerType[] =
+                    name === "oneof"
+                        ? args.map((child) => {
+                              if (!child) {
+                                  error(`Invalid oneof checker at ${location}: '${s}'`);
+                              }
+                              const parsed: CheckerType[] = parseChecker(
+                                  rowFile,
+                                  rowSheet,
+                                  location,
+                                  index,
+                                  child
+                              );
+                              if (parsed.length !== 1) {
+                                  error(`Oneof branch must contain exactly one checker: '${child}'`);
+                              }
+                              return parsed[0]!;
+                          })
+                        : [];
                 checker = {
-                    name,
+                    name: name === "oneof" ? BuiltinChecker.OneOf : name,
                     force,
                     source: s,
                     location,
-                    args: arg.split(",").map((a) => a.trim()),
+                    args,
+                    oneof,
                     refers: {},
                     exec: null!,
                 };
@@ -95,6 +116,7 @@ export const parseChecker = (
                     source: s,
                     location,
                     args: [s],
+                    oneof: [],
                     refers: {},
                     exec: null!,
                 };
@@ -107,6 +129,7 @@ export const parseChecker = (
                     source: s,
                     location,
                     args: [rowFile, rowSheet, rowKey, rowFilter, makeFilePath(colFile || rowFile)],
+                    oneof: [],
                     refers: {},
                     exec: null!,
                 };
@@ -138,6 +161,7 @@ export const parseChecker = (
                         colKey,
                         colFilter,
                     ],
+                    oneof: [],
                     refers: {},
                     exec: null!,
                 };
@@ -148,13 +172,14 @@ export const parseChecker = (
                     source: s,
                     location,
                     args: [s],
+                    oneof: [],
                     refers: {},
                     exec: null!,
                 };
             }
             return checker;
         })
-        .filter((v) => !!v);
+        .filter((v): v is CheckerType => !!v);
 };
 
 const readCell = (sheet: xlsx.Sheet, r: number, c: number) => {

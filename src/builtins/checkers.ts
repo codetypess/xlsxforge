@@ -63,6 +63,10 @@ export const RangeCheckerParser: CheckerParser = (ctx, arg) => {
     };
 };
 
+export const OneOfCheckerParser: CheckerParser = () => {
+    return () => true;
+};
+
 const parseResolver = (expr: IndexerFilterExpr) => {
     type Collector = (value: TValue, collector: TValue[]) => void;
     const collectors: Collector[] = [];
