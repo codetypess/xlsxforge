@@ -1,6 +1,6 @@
 # XLSX Workflow
 
-Use this document as the canonical workflow for `.xlsx` tasks across different agents.
+Use this document as this skill's workflow for `.xlsx` tasks.
 
 ## CLI Entry Selection
 
@@ -79,7 +79,7 @@ fastxlsx set-background-color path/to/file.xlsx --sheet Config --cell B2 --color
 Use `apply` for deterministic multi-step edits:
 
 ```bash
-fastxlsx apply path/to/file.xlsx --ops /tmp/xlsx-agent-ops.json --output out.xlsx
+fastxlsx apply path/to/file.xlsx --ops /tmp/fastxlsx-ops.json --output out.xlsx
 ```
 
 Use `apply` only when the change genuinely spans multiple actions. Single-cell or single-command edits are easier to audit when kept as direct CLI commands.
@@ -130,6 +130,23 @@ If profiles do not exist yet, generate them first:
 ```bash
 fastxlsx table generate-profiles res/task.xlsx
 fastxlsx table generate-profiles res/task.xlsx res/monster.xlsx --sheet-filter '^(main|conf)$' --output table-profiles.json
+```
+
+Sheets whose table profile cannot be inferred, or whose generated profile name duplicates an earlier sheet, are skipped. The JSON output includes `skipped` entries with `file`, `sheet`, `reason`, and `profileName` when available.
+
+When `--output` is used, stdout only prints `Profile file generated: <path>`; read the output file for the full generated `profiles` object.
+
+For large workbook sets, avoid passing every path as a command argument. Write the paths to a newline-delimited file and use `--files-from` so shell argument length limits are not hit:
+
+```bash
+find res -name '*.xlsx' > /tmp/fastxlsx-files.txt
+fastxlsx table generate-profiles --files-from /tmp/fastxlsx-files.txt --output table-profiles.json
+```
+
+You can also scan a directory recursively and ignore specific workbooks:
+
+```bash
+fastxlsx table generate-profiles --from-dir res --ignore res/archive/old.xlsx --output table-profiles.json
 ```
 
 Generated names use `文件名#表名`, for example `task#main`.

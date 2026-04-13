@@ -1,15 +1,15 @@
 ---
-name: xlsx-agent
+name: fastxlsx
 description: Edit and validate `.xlsx` workbooks through the `fastxlsx` CLI. Use for config-table updates, structured-sheet edits, sheet management, style changes, and roundtrip-safe workbook modifications instead of touching workbook XML directly.
 ---
 
-# Xlsx Agent
+# FastXLSX
 
-This skill is a thin adapter over the shared workflow in [ai/skills/xlsx-agent/WORKFLOW.md](../../ai/skills/xlsx-agent/WORKFLOW.md).
+This is the Claude Code skill entrypoint for this repository.
 
-Keep this file short on purpose. Agent discovery happens here, but the canonical workflow lives in one shared location so Codex, Cursor, and Claude do not drift apart.
+Keep this file short. Detailed workflow rules live in [WORKFLOW.md](WORKFLOW.md) inside this Claude Code skill directory.
 
-## Use This Skill For
+## When To Use
 
 - Inspecting `.xlsx` workbooks before editing
 - Single-cell edits and style updates
@@ -19,6 +19,12 @@ Keep this file short on purpose. Agent discovery happens here, but the canonical
 - Roundtrip validation after workbook changes
 
 ## Command Entry
+
+For `.xlsx` tasks in Claude Code, read this skill's workflow first:
+
+```text
+.claude/skills/fastxlsx/WORKFLOW.md
+```
 
 Use the first available CLI entry:
 
@@ -38,11 +44,11 @@ Only when working inside the `fastxlsx` repository root:
 npm run cli -- <subcommand> ...
 ```
 
-The shared workflow document uses `fastxlsx` as shorthand for whichever entry is available.
+The workflow document uses `fastxlsx` as shorthand for whichever entry is available.
 
 ## Canonical References
 
-- Workflow: [ai/skills/xlsx-agent/WORKFLOW.md](../../ai/skills/xlsx-agent/WORKFLOW.md)
-- Ops schema: [ai/skills/xlsx-agent/OPS-SCHEMA.md](../../ai/skills/xlsx-agent/OPS-SCHEMA.md)
+- Workflow: [WORKFLOW.md](WORKFLOW.md)
+- Ops schema: [OPS-SCHEMA.md](OPS-SCHEMA.md)
 
 Read the workflow document before editing. Read the ops schema only when preparing an `apply --ops` payload.
