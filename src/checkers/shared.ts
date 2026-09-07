@@ -78,7 +78,7 @@ const parseResolver = (expr: IndexerFilterExpr) => {
                 });
             }
         } else {
-            throw new Error(`Invalid query: ${expr}`);
+            throw new Error(`Invalid query:${expr.key} ${expr}`);
         }
     }
 

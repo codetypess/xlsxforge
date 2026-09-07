@@ -672,7 +672,7 @@ const runForceCheckerPipelineTests = () => {
             ctx.add(workbook);
             workbook.add(sheet);
             resolveChecker();
-            assert.throws(() => performChecker(), /checker: @size\(1\)/);
+            assert.throws(() => performChecker(), /checker: !@size\(1\)/);
         }
     } finally {
         clearAllContexts();
@@ -765,7 +765,7 @@ const runReferCheckerPipelineTests = () => {
             ctx.add(workbook);
             workbook.add(sheet);
             resolveChecker();
-            assert.throws(() => performChecker(), /checker: @size\(1\)/);
+            assert.throws(() => performChecker(), /checker: !@size\(1\)/);
         }
     } finally {
         clearAllContexts();

@@ -72,6 +72,7 @@ export const parseChecker = (
         .map((s) => s.trim())
         .filter((s) => s)
         .map((s) => {
+            const raw = s;
             const force = s.startsWith("!");
             if (force) {
                 s = s.slice(1);
@@ -105,7 +106,7 @@ export const parseChecker = (
                 checker = {
                     name: name === "oneof" ? BuiltinChecker.OneOf : name,
                     force,
-                    source: s,
+                    source: raw,
                     location,
                     args,
                     oneof,
@@ -116,7 +117,7 @@ export const parseChecker = (
                 checker = {
                     name: BuiltinChecker.Range,
                     force,
-                    source: s,
+                    source: raw,
                     location,
                     args: [s],
                     oneof: [],
@@ -129,7 +130,7 @@ export const parseChecker = (
                 checker = {
                     name: BuiltinChecker.Sheet,
                     force,
-                    source: s,
+                    source: raw,
                     location,
                     args: [
                         rowFile,
@@ -158,7 +159,7 @@ export const parseChecker = (
                 checker = {
                     name: BuiltinChecker.Index,
                     force,
-                    source: s,
+                    source: raw,
                     location,
                     args: [
                         rowFile,
@@ -178,7 +179,7 @@ export const parseChecker = (
                 checker = {
                     name: BuiltinChecker.Expr,
                     force,
-                    source: s,
+                    source: raw,
                     location,
                     args: [s],
                     oneof: [],

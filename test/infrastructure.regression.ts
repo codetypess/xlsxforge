@@ -289,7 +289,10 @@ const runWorkbookAndContextTests = () => {
         assert.equal(sourceWorkbook.has("main"), true);
         sourceWorkbook.remove("main");
         assert.equal(sourceWorkbook.has("main"), false);
-        assert.throws(() => sourceWorkbook.get("main"), /Sheet not found: main/);
+        assert.throws(
+            () => sourceWorkbook.get("main"),
+            /Workbook 'clone\.xlsx' sheet not found: main/
+        );
     } finally {
         clearAllContexts();
         xlsx.clearRunningContext();

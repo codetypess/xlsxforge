@@ -19,7 +19,7 @@ export interface GeneratedItemFollowRow {
      */
     readonly name?: string;
     /**
-     *  (type: string?) (location: C1) (checker: @follow(name))
+     *  (type: string?) (location: C1) (checker: !@follow(name))
      */
     readonly value?: string;
     /**

@@ -79,7 +79,7 @@ export const runRegressionTests = async () => {
                     cell: xlsx.makeCell("missing", "string", "A1", "missing"),
                     errors: [],
                 }),
-            /Sheet not found: missing/
+            /Workbook 'ref\.xlsx' sheet not found: missing/
         );
         xlsx.removeContext(ctx);
     }

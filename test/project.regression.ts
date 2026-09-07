@@ -521,9 +521,12 @@ const runTsToZodTests = async () => {
         await xlsx.tsToZod(inputPath, outputPath);
         const output = fs.readFileSync(outputPath, "utf-8");
         assert.match(output, /import \{ z \} from "zod";/);
-        assert.match(output, /import \{ ProjectKind \} from "\.\/types";/);
+        assert.doesNotMatch(output, /import \{ ProjectKind \} from "\.\/types";/);
         assert.match(output, /import \{ sharedTypeSchema \} from "\.\/define\/index\.schema";/);
-        assert.match(output, /export const projectKindSchema = z\.enum\(ProjectKind\);/);
+        assert.match(
+            output,
+            /export const projectKindSchema = z\.enum\(\{\s*Alpha: "alpha",\s*Beta: "beta",\s*\}\);/
+        );
         assert.match(output, /export const exampleSchema = z\.object\(\{/);
         assert.match(output, /shared: sharedTypeSchema/);
         assert.match(output, /local: z\.object\(\{/);

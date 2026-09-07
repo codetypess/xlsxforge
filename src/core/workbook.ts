@@ -37,7 +37,7 @@ export class Workbook {
 
     get(name: string) {
         if (!this._sheets[name]) {
-            throw new Error(`Sheet not found: ${name}`);
+            throw new Error(`Workbook '${this.path}' sheet not found: ${name}`);
         }
         return this._sheets[name];
     }

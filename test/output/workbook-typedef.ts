@@ -70,7 +70,7 @@ export interface ItemFollowRow {
      */
     name: { v?: string } & TCell;
     /**
-     *  (location: C1) (type: string?) (checker: \@follow(name)) (writer: client|server)
+     *  (location: C1) (type: string?) (checker: !\@follow(name)) (writer: client|server)
      */
     value: { v?: string } & TCell;
     /**

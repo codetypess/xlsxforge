@@ -1,12 +1,56 @@
 import { Processor } from "../core/contracts";
 import { convertValue } from "../core/conversion";
-import { assert } from "../core/errors";
-import { type Sheet, type TObject, type TRow, Type } from "../core/schema";
+import { assert, error } from "../core/errors";
+import { type Sheet, type TCell, type TObject, type TRow, Type } from "../core/schema";
 import { checkType, toString } from "../core/value";
 import { Workbook } from "../core/workbook";
 import { RowIndexer } from "../indexer";
 import { output } from "../io";
 import { values } from "../util";
+
+const cellValue = (value: unknown): { raw: unknown; loc?: string } | null => {
+    if (value && typeof value === "object" && (value as TObject)["!type"] === Type.Cell) {
+        const cell = value as TCell;
+        return { raw: cell.v, loc: cell.r };
+    }
+    if (value === null || value === undefined || typeof value !== "object") {
+        return { raw: value };
+    }
+    return null;
+};
+
+const assertEnumValuesUnique = (obj: TObject, where: string) => {
+    if (obj["!enum"]) {
+        const seenValues = new Map<string, { key: string; loc?: string }>();
+        for (const key of Object.keys(obj)) {
+            if (key.startsWith("!")) {
+                continue;
+            }
+            const member = cellValue(obj[key]);
+            if (!member) {
+                continue;
+            }
+            const valueKey = JSON.stringify(member.raw);
+            const prev = seenValues.get(valueKey);
+            if (prev) {
+                const loc = [prev.loc, member.loc].filter(Boolean).join(" / ");
+                error(
+                    `${where} Enum '${obj["!enum"]}' has duplicate value ${valueKey} for keys '${prev.key}' and '${key}'${loc ? ` at ${loc}` : ""}`
+                );
+            }
+            seenValues.set(valueKey, { key, loc: member.loc });
+        }
+    }
+    for (const key of Object.keys(obj)) {
+        if (key.startsWith("!")) {
+            continue;
+        }
+        const child = obj[key];
+        if (child && typeof child === "object" && (child as TObject)["!type"] !== Type.Cell) {
+            assertEnumValuesUnique(child as TObject, where);
+        }
+    }
+};
 
 export const defineSheet = (workbook: Workbook, sheet: Sheet) => {
     checkType(sheet.data, Type.Sheet);
@@ -63,6 +107,7 @@ export const defineSheet = (workbook: Workbook, sheet: Sheet) => {
         }
     }
 
+    assertEnumValuesUnique(config, `${workbook.name}.${sheet.name}`);
     return config;
 };
 

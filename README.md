@@ -192,7 +192,7 @@ int     string  @reward_type string      int[]
 
 | 处理器                         | 阶段            | 作用                                                                           |
 | ------------------------------ | --------------- | ------------------------------------------------------------------------------ |
-| `@define`                      | `pre-stringify` | 将定义表转换为对象，并以 `define` 事件直接交给 writer                          |
+| `@define`                      | `pre-stringify` | 将定义表转换为对象，并以 `define` 事件直接交给 writer；带 `enum` 列的对象其 value 不允许重复 |
 | `@config`                      | `pre-stringify` | 将 `key/value/value_type/value_comment` 表转换为配置对象，参与后续 `stringify` |
 | `@map(value, ...keys)`         | `pre-stringify` | 将行数据重组为多级 map                                                         |
 | `@collapse(...keys)`           | `pre-stringify` | 按 key 折叠为多级数组结构                                                      |

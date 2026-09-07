@@ -1,6 +1,7 @@
 import { ExprCheckerParser } from "./checkers/expr";
 import { FollowCheckerParser } from "./checkers/follow";
 import { IndexCheckerParser } from "./checkers/index-checker";
+import { MutexCheckerParser } from "./checkers/mutex";
 import { OneOfCheckerParser } from "./checkers/oneof";
 import { RangeCheckerParser } from "./checkers/range";
 import { ReferCheckerParser } from "./checkers/refer";
@@ -49,6 +50,7 @@ export const registerBuiltins = () => {
 
     registerChecker(BuiltinChecker.Expr, ExprCheckerParser);
     registerChecker(BuiltinChecker.Follow, FollowCheckerParser);
+    registerChecker(BuiltinChecker.Mutex, MutexCheckerParser);
     registerChecker(BuiltinChecker.Index, IndexCheckerParser);
     registerChecker(BuiltinChecker.OneOf, OneOfCheckerParser);
     registerChecker(BuiltinChecker.Range, RangeCheckerParser);

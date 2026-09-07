@@ -25,6 +25,7 @@ export const enum BuiltinChecker {
     Refer = "refer",
     Size = "size",
     Follow = "follow",
+    Mutex = "mutex",
     Unique = "unique",
     Range = "xlsx.checker.range",
     Index = "xlsx.checker.index",
