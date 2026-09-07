@@ -155,6 +155,12 @@ typedef sheet 至少要求这些字段：
 - `#foo`、`#1` 表示字面量类型
 - literal 字段不允许再带数组或 optional 后缀
 
+## Typedef 类型生成语义
+
+- `genTsTypedef()` 为 object typedef 生成 TypeScript interface
+- interface 的每个字段都使用 `readonly` 属性修饰符，可选字段保持 `readonly field?: Type` 形式
+- union typedef 继续生成 type alias；Lua typedef 输出不受 TypeScript 属性只读语义影响
+
 ## Typedef 注册与冲突规则
 
 - typedef 以 `path#sheet` 为注册单元

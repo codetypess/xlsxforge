@@ -664,7 +664,9 @@ export const genTsTypedef = (
                 typeBuffer.writeLine(`/** ${field.comment} */`);
             }
             const resolved = resolveTsType(field.type, localTypes, importer);
-            typeBuffer.writeLine(`${field.name}${resolved.optional ? "?" : ""}: ${resolved.type};`);
+            typeBuffer.writeLine(
+                `readonly ${field.name}${resolved.optional ? "?" : ""}: ${resolved.type};`
+            );
         }
         typeBuffer.unindent();
         typeBuffer.writeLine(`}`);

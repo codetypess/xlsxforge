@@ -4,33 +4,33 @@
 /** 杀怪任务 */
 export interface TaskArgKillMonster {
     /** 参数类型 */
-    kind: "kill_monster";
+    readonly kind: "kill_monster";
     /** 怪物ID */
-    id: number;
+    readonly id: number;
     /** 怪物数量 */
-    count: number;
+    readonly count: number;
     /** 队伍 */
-    team?: MonsterTeam;
+    readonly team?: MonsterTeam;
 }
 
 /** 怪物队伍 */
 export interface MonsterTeam {
     /** 队长 */
-    leader: number;
+    readonly leader: number;
     /** 成员 */
-    soldiers?: number[];
+    readonly soldiers?: number[];
 }
 
 /** 捡金币 */
 export interface TaskArgCollectCoin {
     /** 参数类型 */
-    kind: "collect_coin";
+    readonly kind: "collect_coin";
     /** 金币ID */
-    id: number;
+    readonly id: number;
     /** 金币数量 */
-    count: number;
+    readonly count: number;
     /** 限时 */
-    duration: number;
+    readonly duration: number;
 }
 
 /** 任务参数 */

@@ -462,7 +462,7 @@ const runStringifyAndIndexerTests = () => {
     } satisfies xlsx.TypedefWorkbook;
 
     const tupleTypedefTs = xlsx.genTsTypedef(tupleTypedef);
-    assert.match(tupleTypedefTs, /values: \[number, number\]\[\];/);
+    assert.match(tupleTypedefTs, /readonly values: \[number, number\]\[\];/);
 
     const tupleTypedefLua = xlsx.genLuaTypedef(tupleTypedef);
     assert.match(tupleTypedefLua, /---@field values table\[\]/);
